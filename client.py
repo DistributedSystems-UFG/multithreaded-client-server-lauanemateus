@@ -15,65 +15,59 @@ def gerar_requisicao_aleatoria():
     valor2 = random.randint(1, 100) if operacao != "divide" else random.randint(2, 100)
     return f"{operacao}|{valor1}|{valor2}", operacao, valor1, valor2
 
-def enviar_para_servidor(thread_id, num_requisicoes, host, port, id_servidor):
-    """Envia requisições para um servidor específico em thread separada"""
+def enviar_requisicao(thread_id, host, port):
+    """Envia uma requisição em uma thread separada"""
     s = socket(AF_INET, SOCK_STREAM)
     s.connect((host, port))
     
-    with lock:
-        print(f"[{id_servidor}-T{thread_id}] Conectado a {host}:{port}")
+    requisicao, op, v1, v2 = gerar_requisicao_aleatoria()
     
-    for i in range(num_requisicoes):
-        requisicao, op, v1, v2 = gerar_requisicao_aleatoria()
-        
-        s.send(str.encode(requisicao))
-        data = s.recv(1024)
-        resposta = json.loads(bytes.decode(data))
-        
+    s.send(str.encode(requisicao))
+    data = s.recv(1024)
+    resposta = json.loads(bytes.decode(data))
+    
+    with lock:
         if "erro" not in resposta:
-            with lock:
-                print(f"[{id_servidor}-T{thread_id}] {v1} {op} {v2} = {resposta['resultado']}")
+            print(f"[T{thread_id}] {v1} {op} {v2} = {resposta['resultado']}")
+        else:
+            print(f"[T{thread_id}] Erro: {resposta['erro']}")
     
     s.close()
-    with lock:
-        print(f"[{id_servidor}-T{thread_id}] Desconectado")
 
 def main():
-    """Cliente que conecta a dois servidores locais em paralelo"""
+    """Cliente que cria threads para enviar requisições para 2 servidores"""
     print(f"\n{'='*60}")
-    print(f"Cliente Multithread - Dois Servidores")
+    print(f"Cliente Multithread - 60 Requisições (2 Servidores)")
     print(f"{'='*60}\n")
     
-    # Configuração dos dois servidores locais
     servidores = [
-        ("127.0.0.1", 5678, "S1"),   # Servidor 1
-        ("127.0.0.1", 5679, "S2"),   # Servidor 2
+        (HOST, PORT, "S1"),
+        (HOST, PORT2, "S2")
     ]
     
-    threads_por_servidor = 3
-    requisicoes_por_thread = 10
-    
+    requisicoes_por_servidor = 30
     threads = []
     tempo_inicio = time.time()
     
+    thread_id = 1
     # Criar threads para cada servidor
     for host, port, id_serv in servidores:
-        for t in range(threads_por_servidor):
+        for i in range(requisicoes_por_servidor):
             thread = threading.Thread(
-                target=enviar_para_servidor,
-                args=(t + 1, requisicoes_por_thread, host, port, id_serv),
+                target=enviar_requisicao,
+                args=(thread_id, host, port),
                 daemon=False
             )
             threads.append(thread)
             thread.start()
+            thread_id += 1
     
     # Aguardar todas as threads
     for t in threads:
         t.join()
     
     tempo_total = time.time() - tempo_inicio
-    total_threads = len(servidores) * threads_por_servidor
-    total_requisicoes = total_threads * requisicoes_por_thread
+    total_requisicoes = len(servidores) * requisicoes_por_servidor
     
     print(f"\nESTATÍSTICAS")
     print(f"Tempo total: {tempo_total:.4f} segundos")
