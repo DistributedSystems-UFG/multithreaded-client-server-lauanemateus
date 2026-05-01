@@ -4,7 +4,7 @@ Um sistema cliente-servidor que implementa uma **calculadora remota** utilizando
 
 ## Descrição
 
-Este projeto demonstra a comunicação entre cliente e servidor usando sockets com processamento paralelo via threads. O servidor recebe conexões em uma thread principal e dispara uma nova thread para atender cada cliente. O cliente cria uma thread para cada requisição, permitindo envios paralelos para múltiplos servidores.
+Esta atividade demonstra a comunicação entre cliente e servidor usando sockets com processamento paralelo via threads. O servidor recebe conexões em uma thread principal e dispara uma nova thread para atender cada cliente. O cliente cria uma thread para cada requisição, permitindo envios paralelos para múltiplos servidores.
 
 ## Arquitetura de Multithreading
 
